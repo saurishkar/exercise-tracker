@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const mongoose = require("mongoose");
 
-const MONGO_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@cluster0.uw8ojnz.mongodb.net/exercise-tracker?retryWrites=true&w=majority`;
+const MONGO_URI = `mongodb+srv://${process.env["MONGO_USER"]}:${process.env["MONGO_PWD"]}@cluster0.uw8ojnz.mongodb.net/exercise-tracker?retryWrites=true&w=majority`;
 
 mongoose.connect(MONGO_URI);
 
