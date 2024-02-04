@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const mongoose = require("mongoose");
 
-const MONGO_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@cluster0.uw8ojnz.mongodb.net/exercise-tracker?retryWrites=true&w=majority`;
+const MONGO_URI = `mongodb+srv://${process.env["MONGO_USER"]}:${process.env["MONGO_PWD"]}@cluster0.uw8ojnz.mongodb.net/exercise-tracker?retryWrites=true&w=majority`;
 
 mongoose.connect(MONGO_URI);
 
@@ -93,7 +93,9 @@ app.get("/api/users/:_id/logs", async (req, res) => {
   const { from, to, limit = 10 } = req.query;
   const userId = req.params._id;
   const user = await User.findById(userId, "username");
-  const logs = await Log.find({ username: user.username }, null, { limit }).exec();
+  const logs = await Log.find({ username: user.username }, null, {
+    limit,
+  }).exec();
   return res.send(logs);
 });
 
