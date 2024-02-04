@@ -65,6 +65,11 @@ app.post("/api/users", (req, res) => {
     .catch((err) => res.send(err));
 });
 
+app.get("/api/users", async (req, res) => {
+  const users = await User.find({}, "username _id");
+  return res.send(users);
+});
+
 app.post("/api/users/:_id/exercises", async (req, res) => {
   const userId = req.params._id;
   const { description, duration, date } = req.body;
