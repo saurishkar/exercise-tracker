@@ -9,22 +9,31 @@ const MONGO_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_P
 
 mongoose.connect(MONGO_URI);
 
-const userSchema = mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-});
+const userSchema = mongoose.Schema(
+  {
+    username: { type: String, required: true, unique: true },
+  },
+  { versionKey: false }
+);
 
-const exerciseSchema = mongoose.Schema({
-  username: { type: String, required: true },
-  description: { type: String, required: true },
-  duration: { type: Number, required: true },
-  date: { type: Date, required: true },
-});
+const exerciseSchema = mongoose.Schema(
+  {
+    username: { type: String, required: true },
+    description: { type: String, required: true },
+    duration: { type: Number, required: true },
+    date: { type: Date, required: true },
+  },
+  { versionKey: false }
+);
 
-const logSchema = mongoose.Schema({
-  username: { type: String, required: true },
-  count: { type: Number, default: 0 },
-  log: Array,
-});
+const logSchema = mongoose.Schema(
+  {
+    username: { type: String, required: true },
+    count: { type: Number, default: 0 },
+    log: Array,
+  },
+  { versionKey: false }
+);
 
 const Log = mongoose.model("Log", logSchema);
 
@@ -93,7 +102,9 @@ app.get("/api/users/:_id/logs", async (req, res) => {
   const { from, to, limit = 10 } = req.query;
   const userId = req.params._id;
   const user = await User.findById(userId, "username");
-  const logs = await Log.find({ username: user.username }, null, { limit }).exec();
+  const logs = await Log.find({ username: user.username }, null, {
+    limit,
+  }).exec();
   return res.send(logs);
 });
 
