@@ -22,7 +22,7 @@ const exerciseSchema = mongoose.Schema({
 
 const logSchema = mongoose.Schema({
   username: { type: String, required: true },
-  count: Number,
+  count: { type: Number, default: 0 },
   log: Array,
 });
 
@@ -32,11 +32,13 @@ exerciseSchema.post("save", async (doc) => {
   const { username, duration, description, date } = doc;
   const logDetails = { duration, date, description };
   const userLog = await Log.findOne({ username }).exec();
-  if (userLog.username) {
+  if (userLog) {
     userLog.log = [...userLog.log, { ...logDetails }];
+    userLog.count += 1;
     return userLog.save();
   }
   const log = new Log({
+    count: 1,
     username,
     log: [{ ...logDetails }],
   });
