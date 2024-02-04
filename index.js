@@ -13,46 +13,18 @@ const userSchema = mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
   },
-  { versionKey: false }
+  { versionKey: false },
 );
 
 const exerciseSchema = mongoose.Schema(
   {
     username: { type: String, required: true },
-    description: { type: String, required: true },
-    duration: { type: Number, required: true },
-    date: { type: Date, required: true },
+    description: { type: String, required: true, default: "" },
+    duration: { type: Number, required: true, default: 0 },
+    date: { type: Date, default: new Date("2024-05-02") },
   },
-  { versionKey: false }
+  { versionKey: false },
 );
-
-const logSchema = mongoose.Schema(
-  {
-    username: { type: String, required: true },
-    count: { type: Number, default: 0 },
-    log: Array,
-  },
-  { versionKey: false }
-);
-
-const Log = mongoose.model("Log", logSchema);
-
-exerciseSchema.post("save", async (doc) => {
-  const { username, duration, description, date } = doc;
-  const logDetails = { duration, date, description };
-  const userLog = await Log.findOne({ username }).exec();
-  if (userLog) {
-    userLog.log = [...userLog.log, { ...logDetails }];
-    userLog.count += 1;
-    return userLog.save();
-  }
-  const log = new Log({
-    count: 1,
-    username,
-    log: [{ ...logDetails }],
-  });
-  return log.save();
-});
 
 const User = mongoose.model("User", userSchema);
 const Exercise = mongoose.model("Exercise", exerciseSchema);
@@ -75,7 +47,7 @@ app.post("/api/users", (req, res) => {
 });
 
 app.get("/api/users", async (req, res) => {
-  const users = await User.find({}, "username _id");
+  const users = await User.find({});
   return res.send(users);
 });
 
@@ -86,26 +58,58 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   const exerciseParams = {
     description,
     duration,
-    date: new Date(date).toDateString(),
+    date: (date ? new Date(date) : new Date()).toISOString(),
   };
   const exercise = new Exercise({
     username: user.username,
     ...exerciseParams,
   });
-  return exercise
-    .save()
-    .then((data) => res.send(data))
-    .catch((err) => res.send(err));
+  const ex = await exercise.save();
+  const responseObj = {
+    username: user.username,
+    _id: user._id,
+    duration: ex.duration,
+    description: ex.description,
+    date: new Date(ex.date).toDateString(),
+  };
+  res.send(responseObj);
 });
 
 app.get("/api/users/:_id/logs", async (req, res) => {
   const { from, to, limit = 10 } = req.query;
   const userId = req.params._id;
-  const user = await User.findById(userId, "username");
-  const logs = await Log.find({ username: user.username }, null, {
-    limit,
-  }).exec();
-  return res.send(logs);
+  try {
+    const user = await User.findById(userId).exec();
+    const query = { username: user.username };
+    if (!isNaN(Date.parse(from)) && !isNaN(Date.parse(to))) {
+      query.date = {
+        $gte: new Date(from).toISOString(),
+        $lte: new Date(to).toISOString(),
+      };
+    }
+    const exercises = await Exercise.where({ username: user.username })
+      .where(query)
+      .limit(limit)
+      .exec();
+    const logs = exercises.map((exercise) => {
+      return {
+        description: exercise.description,
+        duration: exercise.duration,
+        date: new Date(exercise.date).toDateString(),
+      };
+    });
+    const userData = {
+      username: user.username,
+      _id: userId,
+    };
+    res.send({
+      ...userData,
+      log: logs,
+      count: logs.length,
+    });
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
